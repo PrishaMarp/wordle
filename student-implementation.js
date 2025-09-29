@@ -37,12 +37,10 @@ function initializeGame() {
     // TODO: Reset the game board
     // HINT: Use resetBoard()
     resetBoard()
-    
     // TODO: Hide any messages
     // HINT: Use hideModal() and ensure message element is hidden
     hideModal()
-    
-    console.log('Game initialized!'); // Remove this line when implementing
+    // Remove this line when implementing
 }
 
 /**
@@ -57,21 +55,45 @@ function initializeGame() {
  */
 function handleKeyPress(key) {
     // TODO: Check if game is over - if so, return early
-    
+    if (gameOver) {
+        return;
+    }
     // TODO: Handle letter keys (A-Z)
     // HINT: Use regex /^[A-Z]$/ to test if key is a letter
     // HINT: Check if currentGuess.length < WORD_LENGTH before adding
     // HINT: Use getTile() and updateTileDisplay() to show the letter
-    
+    if (/^[A-Z]$/.test(key)) {
+        if (currentGuess.length < WORD_LENGTH) {
+            currentGuess += key;
+            currentTile = getTile(currentRow, currentGuess.length -1);
+            updateTileDisplay(currentTile, key);
+        }
+        return;
+    }
     // TODO: Handle ENTER key
     // HINT: Check if guess is complete using isGuessComplete()
     // HINT: Call submitGuess() if complete, show error message if not
+    if(key === "ENTER") {
+        if(isGuessComplete(currentGuess)) {
+            submitGuess(currentGuess);
+        } else {
+            showMessage("Not enough letters!");
+        }
+        return;
+    }
     
     // TODO: Handle BACKSPACE key  
     // HINT: Check if there are letters to remove
     // HINT: Clear the tile display and remove from currentGuess
-    
-    console.log('Key pressed:', key); // Remove this line when implementing
+    if (key === "BACKSPACE") {
+        if (currentGuess.length > 0) {
+            currentTile = getTile(currentRow, currentGuess.length -1);
+            updateTileDisplay(currentTile, "");
+            currentGuess = currentGuess.slice(0,-1);
+        }
+        return;
+    }
+     // Remove this line when implementing
 }
 
 /**
@@ -87,31 +109,63 @@ function handleKeyPress(key) {
 function submitGuess() {
     // TODO: Validate guess is complete
     // HINT: Use isGuessComplete()
+    if(!isGuessComplete(currentGuess)) {
+        showMessage("Not enough letters!");
+        shakeRow(currentRow);
+        return;
+    }
     
     // TODO: Validate guess is a real word
     // HINT: Use WordleWords.isValidWord()
     // HINT: Show error message and shake row if invalid
+    if(!WordleWords.isValidWord(currentGuess)) {
+        showMessage("Not in word list!", "error");
+        shakeRow(currentRow);
+        return;
+    }
     
     // TODO: Check each letter and get results
     // HINT: Use checkLetter() for each position
     // HINT: Store results in an array
-    
+    guess = getCurrentGuess();
+    results = [];
+
+    for (let i = 0; i < WORD_LENGTH; i++) {
+        results.push(checkLetter(guess[i], i)); 
+    }
+
     // TODO: Update tile colors immediately
     // HINT: Loop through results and use setTileState()
-    
+    for (let i = 0; i < WORD_LENGTH; i++) {
+        tile = getTile(currentRow, i);
+        setTileState(tile, results[i]);
+    }
     // TODO: Update keyboard colors
     // HINT: Call updateKeyboardColors()
+    for (let i = 0; i < WORD_LENGTH; i++) {
+        updateKeyboardKey(guess[i], results[i]);
+    }
     
     // TODO: Check if guess was correct
     // HINT: Compare currentGuess with currentWord
-    
+    if (guess === getTargetWord()) {
+        gameWon = true;
+        gameOver = true;
+        return;
+    }
     // TODO: Update game state
     // HINT: Call updateGameState()
-    
+    if (currentRow === MAX_GUESSES - 1) {
+        gameOver = true;
+        updateStats(false);
+        return;
+    }
     // TODO: Move to next row if game continues
     // HINT: Increment currentRow and reset currentGuess
+    currentRow++;
+    currentGuess = '';
     
-    console.log('Guess submitted:', currentGuess); // Remove this line when implementing
+    // Remove this line when implementing
 }
 
 /**
@@ -126,7 +180,16 @@ function submitGuess() {
  */
 function checkLetter(guessLetter, position, targetWord) {
     // TODO: Convert inputs to uppercase for comparison
-    
+    guessLetter = guessLetter.toUpperCase();
+    targetWord = targetWord.toUpperCase();
+
+    if (guessLetter === targetWord[position]) {
+        return 'correct';
+    } else if (targetWord.includes(guessLetter)) {
+        return 'present';
+    } else {
+        return 'absent';
+    }
     // TODO: Check if letter is in correct position
     // HINT: Compare targetWord[position] with guessLetter
     
@@ -136,9 +199,7 @@ function checkLetter(guessLetter, position, targetWord) {
     // TODO: Handle duplicate letters correctly
     // This is the most challenging part - you may want to implement
     // a more sophisticated algorithm that processes the entire word
-    
-    console.log('Checking letter:', guessLetter, 'at position:', position); // Remove this line
-    return 'absent'; // Replace with actual logic
+     // Replace with actual logic
 }
 
 /**
@@ -153,11 +214,17 @@ function checkLetter(guessLetter, position, targetWord) {
 function updateGameState(isCorrect) {
     // TODO: Handle win condition
     // HINT: Set gameWon and gameOver flags, call showEndGameModal
+    if (isCorrect) {
+        gameWon = true;
+        gameOver = true;
+    }
     
     // TODO: Handle lose condition  
     // HINT: Check if currentRow >= MAX_GUESSES - 1
-    
-    console.log('Game state updated. Correct:', isCorrect); // Remove this line
+    if (currentRow >= MAX_GUESSES - 1) {
+        gameOver = true;
+    }
+    // Remove this line
 }
 
 // ========================================
